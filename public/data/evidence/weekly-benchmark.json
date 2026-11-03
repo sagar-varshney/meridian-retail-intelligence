@@ -1,0 +1,75 @@
+{
+  "source": "UCI Sales Transactions Weekly",
+  "sourceUrl": "https://archive.ics.uci.edu/dataset/396/sales+transactions+dataset+weekly",
+  "citation": "Tan, J. (2014). Sales Transactions Weekly. UCI Machine Learning Repository. https://doi.org/10.24432/C5XS4Q.",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "sha256": "6f939a928c04820bc291a6184f4f1d0be694b8de58d949e808852804f25969c3",
+  "products": 811,
+  "observations": 42172,
+  "selectionWeeks": "W32\u2013W43",
+  "testWeeks": "W44\u2013W51",
+  "champion": "rolling_mean",
+  "scores": [
+    {
+      "id": "previous_week",
+      "selection": {
+        "mae": 2.584052609946568,
+        "wape": 0.3193559037919386,
+        "weeks": 12,
+        "productWeeks": 9732,
+        "absoluteError": 25148.0,
+        "actualUnits": 78746.0
+      },
+      "test": {
+        "mae": 2.7655672009864367,
+        "wape": 0.3174179167846023,
+        "weeks": 8,
+        "productWeeks": 6488,
+        "absoluteError": 17943.0,
+        "actualUnits": 56528.0
+      }
+    },
+    {
+      "id": "rolling_mean",
+      "selection": {
+        "mae": 2.1015721331689274,
+        "wape": 0.25972747822111597,
+        "weeks": 12,
+        "productWeeks": 9732,
+        "absoluteError": 20452.5,
+        "actualUnits": 78746.0
+      },
+      "test": {
+        "mae": 2.3524198520345254,
+        "wape": 0.2699989385791112,
+        "weeks": 8,
+        "productWeeks": 6488,
+        "absoluteError": 15262.5,
+        "actualUnits": 56528.0
+      }
+    },
+    {
+      "id": "historical_mean",
+      "selection": {
+        "mae": 2.1749086075602633,
+        "wape": 0.26879092993646003,
+        "weeks": 12,
+        "productWeeks": 9732,
+        "absoluteError": 21166.21056877648,
+        "actualUnits": 78746.0
+      },
+      "test": {
+        "mae": 2.3512669918444913,
+        "wape": 0.2698666190752735,
+        "weeks": 8,
+        "productWeeks": 6488,
+        "absoluteError": 15255.02024308706,
+        "actualUnits": 56528.0
+      }
+    }
+  ],
+  "rawUrl": "/data/evidence/sales-transactions-weekly.csv",
+  "method": "Same 811 products and same eight later weeks for every method. Global method selected using W32\u2013W43 only. Each prediction uses earlier weeks; W44\u2013W51 outcomes are not used for selection. Raw purchased units, not the supplied normalized columns.",
+  "limitations": "52 indexed weeks; calendar dates, customer IDs, order baskets, prices and costs are absent. This is a forecasting benchmark, not transaction or profit data. It evaluates simple baselines, not the full historical random-forest study. Results are retrospective and exploratory; no untouched future deployment claim."
+}

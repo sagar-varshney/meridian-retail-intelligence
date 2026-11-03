@@ -30,6 +30,11 @@ def build_samples(input_path):
         ('France', 'Explore customer groups, repeat purchases and product pairs.'),
         ('Germany', 'Inspect a larger export market and evaluate a weekly sales baseline.'),
         ('Netherlands', 'Explore larger order sizes and see how gaps limit forecast evaluation.'),
+        ('Spain', 'Compare a second export market across the full observation period.'),
+        ('Switzerland', 'Inspect purchase sizes and repeat customer behaviour.'),
+        ('Belgium', 'Explore product pairs and customer profiles in a smaller market.'),
+        ('Portugal', 'Compare country-specific product mixes and purchase frequency.'),
+        ('Italy', 'Inspect a small sample and its analysis-availability limits.'),
     ]:
         rows = raw.loc[merchandise & raw.Country.eq(country), fields].copy()
         rows = rows.sort_values('InvoiceDate', kind='stable')
@@ -46,8 +51,14 @@ def build_samples(input_path):
             'id': sample_id, 'name': f'{country} retail study', 'country': country,
             'description': purpose, 'filename': filename, 'url': f'/data/samples/{filename}',
             'rows': len(rows), 'bytes': len(data), 'from': str(first.date()), 'to': str(last.date()),
-            'currency': 'GBP', 'sha256': hashlib.sha256(data).hexdigest(),
+            'currency': 'GBP', 'sourceId': 'uci-retail-ii', 'source': 'UCI Online Retail II',
+            'sourceUrl': SOURCE, 'citation': CITATION, 'license': 'CC BY 4.0',
+            'licenseUrl': 'https://creativecommons.org/licenses/by/4.0/',
+            'transformations': 'Country and merchandise-code filtering; ISO dates. Duplicates and credits retained.',
+            'sha256': hashlib.sha256(data).hexdigest(),
         })
+    previous = json.loads((output / 'catalog.json').read_text()) if (output / 'catalog.json').exists() else {'samples': []}
+    samples += [s for s in previous['samples'] if s.get('sourceId', 'uci-retail-ii') != 'uci-retail-ii']
     manifest = {'source': 'UCI Online Retail II', 'sourceUrl': SOURCE, 'citation': CITATION,
                 'license': 'CC BY 4.0', 'sourceWorkbookSha256': source_hash,
                 'transformations': 'Country and merchandise-code filter only; ISO date formatting and customer-ID formatting. Source duplicates and credits retained.',

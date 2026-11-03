@@ -14,25 +14,38 @@ Google and GitHub sign-in controls appear automatically when the corresponding S
 
 Provider setup: [Google](https://supabase.com/docs/guides/auth/social-sign-in/auth-google), [GitHub](https://supabase.com/docs/guides/auth/social-sign-in/auth-github).
 
-Six working areas: sales overview, customer segmentation/cohorts, Apriori market baskets, forecast evaluation, CSV imports/data quality, and an evidence-linked team action board. The built-in study processes all 1,067,371 UCI transaction lines. Interactive imports support 20,000 rows / 3 MB. The Python pipeline and its analytical tests are preserved in `analytics/`.
+Seven working areas: sales overview, customer segmentation/cohorts, Apriori market baskets, forecast evaluation, business impact, CSV imports/data quality, and an evidence-linked team action board. The built-in study processes all 1,067,371 UCI transaction lines. Interactive imports support 20,000 rows / 3 MB. The Python pipeline and its analytical tests are preserved in `analytics/`.
 
 Source: Chen, D. (2012). Online Retail II. UCI Machine Learning Repository. https://doi.org/10.24432/C5CG6D. Data licence: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Data is cleaned and aggregated. The 120-invoice CSV sample is for testing imports, not a complete trading history.
 
 The records describe one UK giftware retailer in 2009–2011. They support historical sales analysis, customer grouping, basket associations and observed-sales forecasting. Product costs, inventory levels and intervention outcomes are absent, so the study does not establish profit, stockout prevention or causal revenue uplift.
 
-## Samples, explanations and import summaries
+## Dataset library and business evidence
 
-Data studio offers France (13,817 rows), Germany (16,931 rows) and Netherlands (5,023 rows) CSV samples, plus the original quick import sample. These are merchandise subsets of the **same UCI retailer**, not independent businesses. All amounts are GBP. Source duplicates, credits and missing customer IDs are retained so the import summary explains the cleaning decisions. Choose **Use sample** to review the automatically mapped columns before importing, or download the CSV.
+Data studio contains **11 importable transaction studies**: eight country subsets from UCI Online Retail II and three 2017 quarter subsets from the separate Brazilian E-Commerce Public Dataset by Olist. Country/quarter subsets are not independent retailers. The original quick sample remains available. Source filters, citations, per-file SHA-256 hashes, preparation notes and licences appear in the library and `DATA_LICENSES.md`.
 
-Known samples are recognised by their SHA-256 content hash after analysis. Their stored report retains the UCI citation, source URL and CC BY 4.0 attribution; arbitrary uploads remain labelled user-provided. Every dataset has a row reconciliation and an availability summary for sales, customer grouping, retention, basket rules and forecast evaluation. Insufficient history is explicitly marked unavailable. France and Germany support the upload forecasting baseline; the Netherlands sample has insufficient consecutive history for evaluation.
+UCI amounts stay in GBP. Olist amounts stay in BRL; no currency conversion or cross-source pooling is performed. Olist samples include delivered purchases only, join customer_unique_id for repeat-buyer identity, use stable identifier aliases, and combine repeated unit lines into quantities. Categories and SKU aliases stand in for unavailable product names. They exclude cancelled orders, refunds and freight. Olist data and its adapted outputs are **CC BY-NC-SA 4.0 for noncommercial educational use**. UCI data is CC BY 4.0. Exact known CSVs retain their own source attribution on import, and their currencies are enforced.
 
-Customer, basket and forecast pages explain what the numbers mean and suggest an evidence-linked next step. These explanations describe historical patterns and evaluation errors; they do not claim marketing uplift, churn labels or prediction accuracy from an inverted error percentage.
+Each import has a row reconciliation and an availability summary. Small or sparse studies do not receive fabricated basket rules or forecasts. Customer, basket and forecast pages explain the results and suggest evidence-linked actions.
 
-Rebuild the sample library directly from the original workbook:
+**Business impact** presents three evidence levels:
+
+- A comparison with previous-week forecasting on identical observed target weeks, later-period basket evidence and internal clustering diagnostics for the selected dataset.
+- An independent UCI Sales Transactions Weekly benchmark: 811 products, 52 raw weekly quantities per product. Select a global method on W32–W43, then evaluate all methods on W44–W51. The selected four-week average has WAPE 0.26999894 versus 0.31741792 for the previous-week baseline: **14.94% lower absolute error** over 6,488 product-week predictions. The expanding historical mean is slightly better on the later window; it was not selected because its earlier-window error was worse. This retrospective baseline comparison is not profit evidence. Original indexed weeks are retained; no dates or prices are invented.
+- An interactive **assumption-based profit scenario**. It charges incentives on all treatment purchases, includes contact and fixed costs, can report a loss, and computes ROI and a break-even purchase rate. Inputs are not learned campaign outcomes. A prospective randomized retailer trial with net contribution per assigned customer and uncertainty is still needed to establish profit caused by Meridian. The page includes a trial plan and exports a JSON evidence pack.
+
+Reproduce the datasets and independent benchmark after downloading the original sources:
 
 ```sh
 python analytics/build_samples.py --input /absolute/path/online_retail_II.xlsx
+python analytics/build_external_studies.py --olist /absolute/path/olist.zip --weekly /absolute/path/weekly.zip
 ```
+
+Official Olist download: https://www.kaggle.com/api/v1/datasets/download/olistbr/brazilian-ecommerce
+
+Official weekly dataset: https://archive.ics.uci.edu/dataset/396/sales+transactions+dataset+weekly
+
+The scripts, source hashes, CSVs and benchmark JSON are versioned. Missing product costs, campaign assignments and intervention outcomes mean **no realized profit uplift is claimed**.
 
 ## Development
 

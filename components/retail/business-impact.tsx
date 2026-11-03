@@ -1,0 +1,57 @@
+import {useMemo,useState} from 'react';
+import {ArrowRight,Download} from 'lucide-react';
+import {useRetail} from '@/lib/retail-context';
+import {money,num,pct,modelNames} from '@/lib/retail';
+import {basketEvidence,forecastComparison,profitScenario,type ProfitAssumptions} from '@/lib/business-impact';
+import benchmark from '@/public/data/evidence/weekly-benchmark.json';
+import {Badge,Note} from './ui';
+
+export default function BusinessImpact(){
+ const {report,draft}=useRetail();
+ const comparison=useMemo(()=>forecastComparison(report),[report]);
+ const baskets=useMemo(()=>basketEvidence(report),[report]);
+ const [assumptions,setAssumptions]=useState<ProfitAssumptions>({customers:1000,baselineRate:.02,treatmentRate:.025,orderValue:Math.round(report.orders.reduce((a,o)=>a+o[3],0)/(report.orders.length||1)*100)/100,margin:.30,incentive:2,contactCost:.20,fixedCost:100});
+ const [scenarioTouched,setScenarioTouched]=useState(false);
+ let scenario:ReturnType<typeof profitScenario>|null=null,scenarioError='';
+ try{scenario=profitScenario(assumptions)}catch(e){scenarioError=(e as Error).message}
+ const chosen=benchmark.scores.find(s=>s.id===benchmark.champion)!;
+ const naive=benchmark.scores.find(s=>s.id==='previous_week')!;
+ const reduction=1-chosen.test.wape/naive.test.wape;
+ const exportEvidence=()=>{
+  const result={dataset:report.meta,currentForecastComparison:comparison,basketEvidence:baskets,clusterQuality:report.clusterQuality,independentBenchmark:benchmark,scenario:{type:'Assumption-based estimate; no measured campaign profit',userEdited:scenarioTouched,currency:report.meta.currency,assumptions,results:scenario},causalProfitEvidence:'Not collected. A randomized retailer trial with net contribution per assigned customer is required.'};
+  const url=URL.createObjectURL(new Blob([JSON.stringify(result,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='meridian-business-evidence.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ };
+ const fields:{key:keyof ProfitAssumptions;label:string;percent?:boolean;step:string}[]=[
+  {key:'customers',label:'Customers to contact',step:'1'},
+  {key:'baselineRate',label:'Purchase rate without campaign (%)',percent:true,step:'.1'},
+  {key:'treatmentRate',label:'Purchase rate with campaign (%)',percent:true,step:'.1'},
+  {key:'orderValue',label:`Order value before incentive (${report.meta.currency})`,step:'.01'},
+  {key:'margin',label:'Contribution margin before incentive (%)',percent:true,step:'1'},
+  {key:'incentive',label:`Incentive per campaign purchase (${report.meta.currency})`,step:'.01'},
+  {key:'contactCost',label:`Contact cost per customer (${report.meta.currency})`,step:'.01'},
+  {key:'fixedCost',label:`Fixed campaign cost (${report.meta.currency})`,step:'.01'},
+ ];
+ return <>
+  <Note>Historical model evaluation, a profit scenario and a real experiment answer different questions. No retailer profit uplift has been measured for Meridian.</Note>
+  <div className="section-toolbar"><h2>Evidence for a business decision</h2><button className="button" onClick={exportEvidence}><Download size={14}/>Export evidence</button></div>
+  <section className="panel impact-section"><div className="panel-heading"><div><h2>Measured evidence in the selected dataset</h2><p>{report.meta.name} · {report.meta.from} to {report.meta.to}</p></div><Badge tone="blue">Retrospective evaluation</Badge></div>
+   <div className="impact-evidence-grid"><div><h3>Forecast versus a simple baseline</h3>{comparison?<><strong className="impact-number">{pct(comparison.selectedWape)} WAPE</strong><p>{modelNames[report.forecast.champion]||report.forecast.champion} versus {pct(comparison.baselineWape)} for previous-week sales, on the same {comparison.weeks} target weeks.</p><p>{comparison.relativeErrorReduction==null?'The baseline has zero error; relative improvement is undefined.':`${pct(Math.abs(comparison.relativeErrorReduction))} ${comparison.relativeErrorReduction>=0?'lower':'higher'} absolute error than the baseline.`}</p></>:<p>Too few comparable evaluation weeks for a fair baseline comparison.</p>}<small>Forecast error measures predictive performance. It does not measure profit or inventory savings.</small></div>
+   <div><h3>Do product connections persist?</h3><strong className="impact-number">{num(baskets.supported)} / {num(baskets.evaluated)}</strong><p>Of the evaluable displayed rules, this many have later lift above 1 and at least five later co-purchases. {baskets.missing} displayed rules have no estimable later lift.</p><small>These are discovery-ranked displayed rules. Later persistence supports a product-placement hypothesis, not a claim of campaign uplift.</small></div>
+   <div><h3>How reliable are customer groups?</h3><strong className="impact-number">{report.clusterQuality.silhouette?.toFixed(3)??'Not measured'}</strong><p>Silhouette describes separation between groups. Seed agreement: {report.clusterQuality.seedStabilityARI?.toFixed(3)??'not measured for this upload'}.</p><small>Internal clustering quality does not show whether targeting these groups improves retention or profit.</small></div></div>
+  </section>
+  <section className="panel impact-section"><div className="panel-heading"><div><h2>Independent weekly-sales benchmark</h2><p>{benchmark.products} products · {num(benchmark.observations)} weekly quantities · UCI Sales Transactions Weekly</p></div><Badge tone="green">Separate data source</Badge></div>
+   <div className="impact-copy"><p>The four-week average was selected using {benchmark.selectionWeeks}. On {benchmark.testWeeks}, it has {pct(reduction)} less absolute error than the previous-week baseline across {num(chosen.test.productWeeks)} product-week predictions.</p><p>These are indexed weeks. The dataset has no customer baskets, prices or costs; it is used for forecasting evaluation only.</p></div>
+   <div className="table-wrap"><table><thead><tr><th>Method</th><th className="numeric">Selection WAPE</th><th className="numeric">Later WAPE</th><th className="numeric">Later MAE (units)</th></tr></thead><tbody>{benchmark.scores.map(s=><tr key={s.id}><td><strong>{modelNames[s.id]||s.id}</strong> {s.id===benchmark.champion&&<Badge tone="green">Selected earlier</Badge>}</td><td className="numeric">{(s.selection.wape*100).toFixed(2)}%</td><td className="numeric">{(s.test.wape*100).toFixed(2)}%</td><td className="numeric">{s.test.mae.toFixed(3)}</td></tr>)}</tbody></table></div>
+   <div className="impact-copy"><small>{benchmark.method} {benchmark.limitations}</small><p><a href={benchmark.sourceUrl} target="_blank" rel="noreferrer">Publisher and citation</a> · <a href={benchmark.rawUrl} download>Download original weekly CSV</a> · <a href="/data/evidence/weekly-benchmark.json" download>Download results</a> · {benchmark.license}</p></div>
+  </section>
+  <section className="panel impact-section" aria-label="Profit scenario calculator"><div className="panel-heading"><div><h2>Would an assumed campaign pay for itself?</h2><p>Illustrative inputs in {report.meta.currency}. Purchase-rate uplift and margins are assumptions, not model predictions.</p></div><Badge tone="amber">Profit scenario</Badge></div>
+   <div className="profit-layout"><div><div className="profit-fields">{fields.map(f=><label key={f.key}>{f.label}<input type="number" min={f.key==='customers'?1:0} max={f.percent?100:undefined} step={f.step} value={Number.isFinite(assumptions[f.key])?Number((assumptions[f.key]*(f.percent?100:1)).toFixed(6)):''} onChange={e=>{setScenarioTouched(true);setAssumptions({...assumptions,[f.key]:e.target.value===''?NaN:Number(e.target.value)/(f.percent?100:1)})}}/></label>)}</div><p className="body-copy">Order value starts from this dataset’s historical average. Other starting values are illustrative. The scenario assumes equal order values and margins in both groups. Margin must already account for goods, fulfilment, fees and expected returns. Incentives are charged on all campaign purchases, including customers who would have purchased anyway.</p></div>
+   <div className="profit-result">{scenario?<><Badge tone={scenario.profit>=0?'green':'rose'}>{scenario.profit>=0?'Positive scenario':'Loss scenario'}</Badge><small>Estimated incremental contribution profit</small><strong className={scenario.profit>=0?'positive':'negative'}>{money(scenario.profit,report.meta.currency)}</strong><dl><div><dt>Additional expected purchases</dt><dd>{scenario.additionalOrders.toFixed(1)}</dd></div><div><dt>Additional contribution before campaign cost</dt><dd>{money(scenario.incrementalContribution,report.meta.currency)}</dd></div><div><dt>Incentives on all campaign purchases</dt><dd>{money(scenario.incentiveCost,report.meta.currency)}</dd></div><div><dt>Total campaign cost</dt><dd>{money(scenario.campaignCost,report.meta.currency)}</dd></div><div><dt>Scenario ROI</dt><dd>{pct(scenario.roi)}</dd></div><div><dt>Break-even campaign purchase rate</dt><dd>{scenario.breakEvenRate!=null&&scenario.breakEvenRate<=1?pct(scenario.breakEvenRate):'Not achievable under these assumptions'}</dd></div></dl><p>Estimated profit = additional orders × order value × margin − incentives − contact costs − fixed cost.</p></>:<p role="alert">{scenarioError}</p>}</div></div>
+  </section>
+  <section className="panel impact-section"><div className="panel-heading"><div><h2>How to prove actual profit uplift</h2><p>A prospective experiment with a retailer is the next evidence step.</p></div><Badge>Trial not run</Badge></div>
+   <ol className="experiment-steps"><li><strong>Define one change.</strong> Choose a bundle placement or customer offer suggested by Meridian. Fix the audience, duration, primary metric and decision rule before looking at results.</li><li><strong>Randomly assign customers.</strong> Keep a control group on the current experience and a treatment group on the proposed change. Store assignment IDs and analyse all assigned customers, including non-buyers.</li><li><strong>Measure contribution per assigned customer.</strong> Deduct product cost, discounts, fulfilment, fees, returns and campaign cost. Compare treatment and control over the same period, reporting the difference and a confidence interval.</li><li><strong>Decide from the result.</strong> A positive, sufficiently precise incremental contribution supports rollout. Include operating costs and guardrails; a higher sales total alone is insufficient.</li></ol>
+   <div className="impact-copy"><p>Public transaction datasets do not contain Meridian intervention assignments and outcomes. The calculator is a scenario; a before/after comparison cannot by itself prove causation.</p><a href="https://hdsr.mitpress.mit.edu/pub/aj31wj81/release/1" target="_blank" rel="noreferrer">Research: Bojinov and Gupta, Online Experimentation (2022)</a></div>
+   <div className="modal-actions impact-action"><button className="button primary" onClick={()=>draft('Plan a randomized retail profit trial',`Source: ${report.meta.name}. Historical evidence reviewed in Business impact. Scenario inputs are unverified assumptions; no campaign profit has been measured.`,'Specify the intervention, randomization, audience, fixed evaluation window, sample-size calculation and net contribution per assigned customer. Record actual costs and uncertainty before claiming profit uplift.')} >Create an experiment-planning action<ArrowRight size={14}/></button></div>
+  </section>
+ </>;
+}

@@ -19,7 +19,7 @@ export type RetailReport = {
   quality: {name:string;count:number;handling:string}[];
 };
 export type Action = {id:string;workspaceId:string;datasetId:string;title:string;description:string;evidence:string;owner:string;priority:string;status:string;dueDate:string;outcome:string;createdAt:string;updatedAt:string};
-export const modelNames:Record<string,string>={previous_week:'Previous week',rolling_mean:'4-week average',seasonal:'Seasonal naïve',random_forest:'Random forest'};
+export const modelNames:Record<string,string>={previous_week:'Previous week',rolling_mean:'4-week average',historical_mean:'Expanding historical mean',seasonal:'Seasonal naïve',random_forest:'Random forest'};
 export function money(n:number,currency='GBP',compact=false){return new Intl.NumberFormat('en-GB',{style:'currency',currency,notation:compact?'compact':'standard',maximumFractionDigits:compact?1:0}).format(n)}
 export function num(n:number){return new Intl.NumberFormat('en-GB').format(Math.round(n))}
 export function pct(n:number|null|undefined){return n==null?'—':`${(n*100).toFixed(1)}%`}

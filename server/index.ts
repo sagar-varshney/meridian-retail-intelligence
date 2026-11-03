@@ -68,7 +68,7 @@ app.use('/api',async(req,res)=>{
   }
   if(p==='datasets'&&method==='POST'){
    if(!manager){fail('Only managers can import datasets.',403);return}if(typeof v.csv!=='string'||Buffer.byteLength(v.csv)>3000000){fail('Choose a CSV smaller than 3 MB.');return}
-   if(!['GBP','USD','EUR','INR','AUD','CAD'].includes(v.currency)){fail('Choose a supported currency.');return}
+   if(!['GBP','USD','EUR','INR','AUD','CAD','BRL'].includes(v.currency)){fail('Choose a supported currency.');return}
    if(!v.mapping||typeof v.mapping!=='object'||Object.values(v.mapping).some(x=>typeof x!=='string')){fail('Map the CSV columns.');return}
    const id=crypto.randomUUID(),datasetName=str(v.name,100)||'Imported transactions',objectKey=wid+'/'+id;
    const report=await analyseCSV(v.csv,v.mapping,datasetName,v.currency,id);

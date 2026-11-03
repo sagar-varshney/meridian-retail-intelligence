@@ -1,3 +1,4 @@
+import {profitScenario,forecastComparison,basketEvidence} from '../lib/business-impact.ts';
 import {createHash} from 'node:crypto';
 import {analysisSummary} from '../lib/analysis-summary.ts';
 import {sampleCatalog,sampleProvenance} from '../lib/sample-data.ts';
@@ -105,16 +106,17 @@ test('real sample files fit limits, retain provenance and produce usable analyse
   assert.ok(sample.rows<=20000);
   assert.ok(rows.slice(1).every(row=>row[7]===sample.country));
   const r=await analyseCSV(text,detectMapping(rows[0]),sample.name,sample.currency,sample.id);
-  assert.equal(r.meta.license,'CC BY 4.0');
-  assert.equal(r.meta.sourceUrl,sampleCatalog.sourceUrl);
-  assert.ok(r.meta.source.includes(sample.country));
-  assert.ok(r.meta.citation.includes('Chen'));
+  assert.equal(r.meta.license,sample.license);
+  assert.equal(r.meta.sourceUrl,sample.sourceUrl);
+  assert.ok(r.meta.source.includes(sample.source));
+  assert.ok(r.meta.citation.includes(sample.citation));
   const summary=analysisSummary(r);
   assert.equal(r.meta.acceptedRows+r.meta.duplicateRows+r.meta.creditRows+summary.otherRows,sample.rows);
-  assert.ok(r.orders.length>100);
+  assert.ok(r.orders.length>0);
   assert.equal(summary.analyses.find(a=>a.name==='Customer grouping').status,'ready');
   assert.equal(summary.analyses.find(a=>a.name==='Retention cohorts').status,'ready');
-  assert.equal(summary.analyses.find(a=>a.name==='Forecast evaluation').status,sample.id==='netherlands'?'unavailable':'ready');
+  if(['france','germany'].includes(sample.id))assert.equal(summary.analyses.find(a=>a.name==='Forecast evaluation').status,'ready');
+  if(sample.id==='netherlands')assert.equal(summary.analyses.find(a=>a.name==='Forecast evaluation').status,'unavailable');
   assert.equal(r.forecast.next.value,null);
   if(sample.id==='france'){
    await assert.rejects(analyseCSV(text,detectMapping(rows[0]),sample.name,'INR','wrong-currency'),/recorded in GBP/);
@@ -124,4 +126,45 @@ test('real sample files fit limits, retain provenance and produce usable analyse
   }
  }
  assert.equal(sampleProvenance('invalid-hash'),undefined);
+});
+
+test('profit scenarios charge incentives on all treatment purchases and include losses',()=>{
+ const a={customers:1000,baselineRate:.02,treatmentRate:.03,orderValue:50,margin:.4,incentive:2,contactCost:.1,fixedCost:0};
+ const p=profitScenario(a);
+ assert.ok(Math.abs(p.additionalOrders-10)<1e-10);
+ assert.equal(p.incentiveCost,60);
+ assert.ok(Math.abs(p.profit-40)<1e-10);
+ assert.ok(Math.abs(p.roi-.25)<1e-10);
+ const be=profitScenario({...a,treatmentRate:p.breakEvenRate});
+ assert.ok(Math.abs(be.profit)<1e-9);
+ assert.ok(profitScenario({...a,treatmentRate:a.baselineRate}).profit<0);
+ assert.equal(profitScenario({...a,incentive:0,contactCost:0,fixedCost:0}).roi,null);
+ assert.throws(()=>profitScenario({...a,treatmentRate:1.1}));
+ assert.throws(()=>profitScenario({...a,customers:0}));
+ assert.throws(()=>profitScenario({...a,margin:NaN}));
+});
+
+test('historical forecast comparison uses matched weeks and reports the naive baseline honestly',()=>{
+ const r=JSON.parse(fs.readFileSync(new URL('../public/data/retail-demo.json',import.meta.url)));
+ const c=forecastComparison(r);
+ assert.equal(c.weeks,8);
+ assert.ok(Math.abs(c.selectedWape-.1155022576780172)<1e-10);
+ assert.ok(Math.abs(c.baselineWape-.1264650211268952)<1e-10);
+ assert.ok(c.relativeErrorReduction>0);
+ const noData=structuredClone(r);noData.forecast.testWeeks=0;assert.equal(forecastComparison(noData),null);
+ const b=basketEvidence(r);assert.ok(b.supported<=b.evaluated&&b.evaluated<=b.displayed);
+});
+
+test('independent weekly benchmark reproduces source metrics without future target leakage',()=>{
+ const b=JSON.parse(fs.readFileSync(new URL('../public/data/evidence/weekly-benchmark.json',import.meta.url)));
+ const raw=fs.readFileSync(new URL('../public'+b.rawUrl,import.meta.url),'utf8');
+ assert.equal(createHash('sha256').update(raw).digest('hex'),b.sha256);
+ const rows=parseCSV(raw),head=rows.shift();assert.equal(rows.length,811);
+ let actual=0,naiveError=0,meanError=0;
+ for(const row of rows){const y=Array.from({length:52},(_,i)=>Number(row[head.indexOf('W'+i)]));for(let i=44;i<52;i++){actual+=y[i];naiveError+=Math.abs(y[i]-y[i-1]);meanError+=Math.abs(y[i]-y.slice(i-4,i).reduce((a,v)=>a+v,0)/4)}}
+ assert.equal(b.observations,811*52);
+ assert.equal(b.champion,[...b.scores].sort((a,b)=>a.selection.wape-b.selection.wape)[0].id);
+ assert.equal(b.scores.find(s=>s.id==='rolling_mean').test.wape,meanError/actual);
+ assert.equal(b.scores.find(s=>s.id==='previous_week').test.wape,naiveError/actual);
+ assert.ok(meanError<naiveError);
 });
