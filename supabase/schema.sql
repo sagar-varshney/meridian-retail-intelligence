@@ -107,7 +107,7 @@ end $$;
 create trigger meridian_action_history after insert or update on public.meridian_actions for each row execute function meridian_private.audit_action();
 revoke all on function meridian_private.audit_action() from public,anon;
 
-insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('meridian-uploads','meridian-uploads',false,4000000,array['text/csv','application/json']);
+insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types) values('meridian-uploads','meridian-uploads',false,16000000,array['text/csv','application/json']);
 create policy meridian_storage_read on storage.objects for select to authenticated using(bucket_id='meridian-uploads' and meridian_private.member_role(((storage.foldername(name))[1])::uuid) is not null);
 create policy meridian_storage_insert on storage.objects for insert to authenticated with check(bucket_id='meridian-uploads' and meridian_private.member_role(((storage.foldername(name))[1])::uuid)='manager');
 create policy meridian_storage_delete on storage.objects for delete to authenticated using(bucket_id='meridian-uploads' and meridian_private.member_role(((storage.foldername(name))[1])::uuid)='manager');

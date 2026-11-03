@@ -34,7 +34,7 @@ Set Authentication → URL Configuration → Site URL and Redirect URLs to the f
 
 ## Render deployment
 
-Connect the private GitHub repository to Render. One Node web service serves both the frontend and API. No local disk/database is required for durable records.
+Connect the GitHub repository to Render. One Node web service serves both the frontend and API. No local disk/database is required for durable records.
 
 - Build: `corepack pnpm install --frozen-lockfile && corepack pnpm run build`
 - Start: `node dist-server/index.js`
@@ -63,5 +63,9 @@ pnpm run build
 ```
 
 The original workbook is downloadable from https://archive.ics.uci.edu/dataset/502/online+retail+ii. Preserve attribution when distributing derived reports. The original study's forecasts are a chronological backtest, not an untouched external benchmark.
+
+Live app: https://meridian-retail-intelligence.onrender.com
+
+GitHub: https://github.com/sagar-varshney/meridian-retail-intelligence (made public by the owner for Render access).
 
 The previous Healthy Route AI project was paused to free the account's active-project slot. BriefActions was not changed. The earlier Sites deployment is retained as a fallback; it is not used by this application.
