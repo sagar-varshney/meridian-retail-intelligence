@@ -1,3 +1,6 @@
+import {createHash} from 'node:crypto';
+import {analysisSummary} from '../lib/analysis-summary.ts';
+import {sampleCatalog,sampleProvenance} from '../lib/sample-data.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -74,4 +77,51 @@ test('full study reconciles invoice, product and monthly totals',()=>{
  const best=[...r.forecast.scores].filter(s=>s.selection).sort((a,b)=>a.selection.wape-b.selection.wape)[0];
  assert.equal(r.forecast.champion,best.id);
  for(const rule of r.rules){assert.ok(rule.support>=r.mining.minSupport);assert.ok(rule.confidence>=r.mining.minConfidence);assert.ok(rule.antecedent.length<=2);assert.ok(rule.validationCount<=r.mining.validationOrders)}
+});
+
+test('import summary reconciles source rows without double-counting missing IDs',async()=>{
+ const r=await analyseCSV(csv,mapping,'Summary','GBP','summary');
+ const summary=analysisSummary(r);
+ assert.equal(summary.otherRows,4);
+ assert.equal(r.meta.acceptedRows+r.meta.creditRows+r.meta.duplicateRows+summary.otherRows,r.meta.rawRows);
+ assert.equal(summary.missingCustomerRows,1);
+ assert.equal(summary.analyses.find(a=>a.name==='Forecast evaluation').status,'unavailable');
+ assert.equal(summary.analyses.find(a=>a.name==='Customer grouping').status,'limited');
+ const anonymous=await analyseCSV(headers+'\n1,A,One,1,2020-01-01,5,,UK\n2,B,Two,1,2020-01-02,5,,UK',mapping,'Anonymous','GBP','anonymous');
+ const availability=analysisSummary(anonymous);
+ assert.equal(availability.analyses.find(a=>a.name==='Sales overview').status,'ready');
+ assert.equal(availability.analyses.find(a=>a.name==='Customer grouping').status,'unavailable');
+ assert.equal(availability.analyses.find(a=>a.name==='Retention cohorts').status,'unavailable');
+});
+
+test('real sample files fit limits, retain provenance and produce usable analyses',async()=>{
+ for(const sample of sampleCatalog.samples){
+  const text=fs.readFileSync(new URL('../public'+sample.url,import.meta.url),'utf8');
+  const digest=createHash('sha256').update(text).digest('hex');
+  assert.equal(digest,sample.sha256);
+  assert.ok(Buffer.byteLength(text)<3000000);
+  const rows=parseCSV(text);
+  assert.equal(rows.length-1,sample.rows);
+  assert.ok(sample.rows<=20000);
+  assert.ok(rows.slice(1).every(row=>row[7]===sample.country));
+  const r=await analyseCSV(text,detectMapping(rows[0]),sample.name,sample.currency,sample.id);
+  assert.equal(r.meta.license,'CC BY 4.0');
+  assert.equal(r.meta.sourceUrl,sampleCatalog.sourceUrl);
+  assert.ok(r.meta.source.includes(sample.country));
+  assert.ok(r.meta.citation.includes('Chen'));
+  const summary=analysisSummary(r);
+  assert.equal(r.meta.acceptedRows+r.meta.duplicateRows+r.meta.creditRows+summary.otherRows,sample.rows);
+  assert.ok(r.orders.length>100);
+  assert.equal(summary.analyses.find(a=>a.name==='Customer grouping').status,'ready');
+  assert.equal(summary.analyses.find(a=>a.name==='Retention cohorts').status,'ready');
+  assert.equal(summary.analyses.find(a=>a.name==='Forecast evaluation').status,sample.id==='netherlands'?'unavailable':'ready');
+  assert.equal(r.forecast.next.value,null);
+  if(sample.id==='france'){
+   await assert.rejects(analyseCSV(text,detectMapping(rows[0]),sample.name,'INR','wrong-currency'),/recorded in GBP/);
+   const changed=await analyseCSV(text+'\n',detectMapping(rows[0]),'Changed upload','GBP','changed');
+   assert.equal(changed.meta.license,'User-provided data');
+   assert.equal(changed.meta.sourceUrl,undefined);
+  }
+ }
+ assert.equal(sampleProvenance('invalid-hash'),undefined);
 });

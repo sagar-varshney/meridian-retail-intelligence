@@ -1,0 +1,52 @@
+{
+  "source": "UCI Online Retail II",
+  "sourceUrl": "https://archive.ics.uci.edu/dataset/502/online+retail+ii",
+  "citation": "Chen, D. (2012). Online Retail II. UCI Machine Learning Repository. https://doi.org/10.24432/C5CG6D",
+  "license": "CC BY 4.0",
+  "sourceWorkbookSha256": "bcbe73b35f5b7babf197fb0cb983a11f5d9ff929078d4aa53d171b1f2df2e980",
+  "transformations": "Country and merchandise-code filter only; ISO date formatting and customer-ID formatting. Source duplicates and credits retained.",
+  "samples": [
+    {
+      "id": "france",
+      "name": "France retail study",
+      "country": "France",
+      "description": "Explore customer groups, repeat purchases and product pairs.",
+      "filename": "online-retail-ii-france.csv",
+      "url": "/data/samples/online-retail-ii-france.csv",
+      "rows": 13817,
+      "bytes": 1122328,
+      "from": "2009-12-01",
+      "to": "2011-12-09",
+      "currency": "GBP",
+      "sha256": "d7fccf6fb37395d3165b6c28786f59bbe55d4993e5563dc89b9a850b1912c643"
+    },
+    {
+      "id": "germany",
+      "name": "Germany retail study",
+      "country": "Germany",
+      "description": "Inspect a larger export market and evaluate a weekly sales baseline.",
+      "filename": "online-retail-ii-germany.csv",
+      "url": "/data/samples/online-retail-ii-germany.csv",
+      "rows": 16931,
+      "bytes": 1393132,
+      "from": "2009-12-01",
+      "to": "2011-12-09",
+      "currency": "GBP",
+      "sha256": "f906463dacc3ed1f6066f06bbb9f00acee545853db2cd6ad4851c83d6c381e7b"
+    },
+    {
+      "id": "netherlands",
+      "name": "Netherlands retail study",
+      "country": "Netherlands",
+      "description": "Explore larger order sizes and see how gaps limit forecast evaluation.",
+      "filename": "online-retail-ii-netherlands.csv",
+      "url": "/data/samples/online-retail-ii-netherlands.csv",
+      "rows": 5023,
+      "bytes": 437222,
+      "from": "2009-12-02",
+      "to": "2011-12-08",
+      "currency": "GBP",
+      "sha256": "764415b40bb7c3e78cf26153699e5b20179de802529eb22368111dd70a9112f2"
+    }
+  ]
+}

@@ -20,6 +20,20 @@ Source: Chen, D. (2012). Online Retail II. UCI Machine Learning Repository. http
 
 The records describe one UK giftware retailer in 2009–2011. They support historical sales analysis, customer grouping, basket associations and observed-sales forecasting. Product costs, inventory levels and intervention outcomes are absent, so the study does not establish profit, stockout prevention or causal revenue uplift.
 
+## Samples, explanations and import summaries
+
+Data studio offers France (13,817 rows), Germany (16,931 rows) and Netherlands (5,023 rows) CSV samples, plus the original quick import sample. These are merchandise subsets of the **same UCI retailer**, not independent businesses. All amounts are GBP. Source duplicates, credits and missing customer IDs are retained so the import summary explains the cleaning decisions. Choose **Use sample** to review the automatically mapped columns before importing, or download the CSV.
+
+Known samples are recognised by their SHA-256 content hash after analysis. Their stored report retains the UCI citation, source URL and CC BY 4.0 attribution; arbitrary uploads remain labelled user-provided. Every dataset has a row reconciliation and an availability summary for sales, customer grouping, retention, basket rules and forecast evaluation. Insufficient history is explicitly marked unavailable. France and Germany support the upload forecasting baseline; the Netherlands sample has insufficient consecutive history for evaluation.
+
+Customer, basket and forecast pages explain what the numbers mean and suggest an evidence-linked next step. These explanations describe historical patterns and evaluation errors; they do not claim marketing uplift, churn labels or prediction accuracy from an inverted error percentage.
+
+Rebuild the sample library directly from the original workbook:
+
+```sh
+python analytics/build_samples.py --input /absolute/path/online_retail_II.xlsx
+```
+
 ## Development
 
 Use Node 24 and pnpm 11.25.0:
