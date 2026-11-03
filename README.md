@@ -8,6 +8,12 @@ An independent React/TypeScript application with a Node/Express API. Render host
 
 ## Features and data
 
+The header includes sign-out and System / Light / Dark appearance controls. Theme choice is remembered on the device. Managers can use **Add data** beside the dataset selector to import another CSV; imported datasets are stored privately in their workspace.
+
+Google and GitHub sign-in controls appear automatically when the corresponding Supabase provider is enabled. Configure each provider in Authentication → Sign In / Providers with its OAuth client ID and secret. Provider callback URL: `https://huzwxbquiwpalzxtuhkb.supabase.co/auth/v1/callback`. Application redirect URL: `https://meridian-retail-intelligence.onrender.com`. Keep client secrets in Supabase, never in this repository. These providers are not enabled merely by deploying the frontend.
+
+Provider setup: [Google](https://supabase.com/docs/guides/auth/social-sign-in/auth-google), [GitHub](https://supabase.com/docs/guides/auth/social-sign-in/auth-github).
+
 Six working areas: sales overview, customer segmentation/cohorts, Apriori market baskets, forecast evaluation, CSV imports/data quality, and an evidence-linked team action board. The built-in study processes all 1,067,371 UCI transaction lines. Interactive imports support 20,000 rows / 3 MB. The Python pipeline and its analytical tests are preserved in `analytics/`.
 
 Source: Chen, D. (2012). Online Retail II. UCI Machine Learning Repository. https://doi.org/10.24432/C5CG6D. Data licence: CC BY 4.0, https://creativecommons.org/licenses/by/4.0/. Data is cleaned and aggregated. The 120-invoice CSV sample is for testing imports, not a complete trading history.
