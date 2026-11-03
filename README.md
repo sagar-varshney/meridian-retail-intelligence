@@ -1,5 +1,9 @@
 # Meridian Retail Intelligence — Render + Supabase
 
+**Live website:** [Open Meridian Retail Intelligence](https://meridian-retail-intelligence.onrender.com)
+
+Create an account or sign in with your email and password. The free Render service may take a moment to wake after being idle.
+
 An independent React/TypeScript application with a Node/Express API. Render hosts the application; Supabase provides email/password authentication, Postgres and private upload storage. There is no ChatGPT, Sites, Cloudflare Worker, D1 or R2 runtime dependency.
 
 ## Features and data
@@ -63,8 +67,6 @@ pnpm run build
 ```
 
 The original workbook is downloadable from https://archive.ics.uci.edu/dataset/502/online+retail+ii. Preserve attribution when distributing derived reports. The original study's forecasts are a chronological backtest, not an untouched external benchmark.
-
-Live app: https://meridian-retail-intelligence.onrender.com
 
 GitHub: https://github.com/sagar-varshney/meridian-retail-intelligence (made public by the owner for Render access).
 
